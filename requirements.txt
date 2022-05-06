@@ -1,0 +1,7 @@
+pandas
+numpy
+finance-datareader
+sklearn
+tqdm
+jupyter
+ipykernel
