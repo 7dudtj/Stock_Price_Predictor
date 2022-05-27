@@ -14,6 +14,7 @@
 # import libraries
 import FinanceDataReader as fdr
 import pandas as pd
+import numpy as np
 
 # getData() 에서 사용되는 함수들---------------------------------------------
 # 1. function for columns renaming
@@ -35,8 +36,11 @@ def col_rename(data_set, name_from, name_to):
     return data_set
 
 # 3. function for adjusting friday to sunday data as new friday data
-def weekendToFriday(target, idx, col): # idx: Friday
-    target.loc[idx, col] = (target.loc[idx, col]//7)*1 + (target.loc[idx+1, col]//7)*2 + (target.loc[idx+2, col]//7)*4
+def weekendToFriday(target, idx, col, returnType): # idx: Friday
+    if (returnType == 'intType'):
+        target.loc[idx, col] = (target.loc[idx, col]//7)*1 + (target.loc[idx+1, col]//7)*2 + (target.loc[idx+2, col]//7)*4
+    elif (returnType == 'floatType'):
+        target.loc[idx, col] = (target.loc[idx, col]/7)*1 + (target.loc[idx+1, col]/7)*2 + (target.loc[idx+2, col]/7)*4
     return target.loc[idx, col]
 # --------------------------------------------------------------------------
 
@@ -106,9 +110,9 @@ def getData(start_date, end_date):
         BTC.drop(len(BTC)-1, inplace=True)
     for idx in BTC.index:
         if (BTC.loc[idx, 'btc_dayofweek'] == 6):
-            BTC.loc[idx-2, 'btc_Close'] = weekendToFriday(BTC, idx-2, 'btc_Close')
-            BTC.loc[idx-2, 'btc_Volume'] = weekendToFriday(BTC, idx-2, 'btc_Volume')
-            BTC.loc[idx-2, 'btc_Change'] = weekendToFriday(BTC, idx-2, 'btc_Change')
+            BTC.loc[idx-2, 'btc_Close'] = weekendToFriday(BTC, idx-2, 'btc_Close', 'intType')
+            BTC.loc[idx-2, 'btc_Volume'] = weekendToFriday(BTC, idx-2, 'btc_Volume', 'floatType')
+            BTC.loc[idx-2, 'btc_Change'] = np.ceil(weekendToFriday(BTC, idx-2, 'btc_Change', 'floatType')*1000)/1000
     for idx in BTC.index:
         if (BTC.loc[idx, 'btc_dayofweek'] == 5 or BTC.loc[idx, 'btc_dayofweek'] == 6):
             BTC.drop(idx, inplace=True)
@@ -126,8 +130,9 @@ def getData(start_date, end_date):
         KGB.drop(len(KGB)-1, inplace=True)
     for idx in KGB.index:
         if (KGB.loc[idx, 'kgb_dayofweek'] == 6):
-            KGB.loc[idx-2, 'kgb_Close'] = weekendToFriday(KGB, idx-2, 'kgb_Close')
-            KGB.loc[idx-2, 'kgb_Change'] = weekendToFriday(KGB, idx-2, 'kgb_Change')
+            KGB.loc[idx-2, 'kgb_Close'] = weekendToFriday(KGB, idx-2, 'kgb_Close', 'floatType')
+            KGB.loc[idx-2, 'kgb_Change'] = weekendToFriday(KGB, idx-2, 'kgb_Change', 'floatType')
+            KGB.loc[idx-2, 'kgb_Change'] = np.ceil(weekendToFriday(KGB, idx-2, 'kgb_Change', 'floatType')*1000)/1000
     for idx in KGB.index:
         if (KGB.loc[idx, 'kgb_dayofweek'] == 5 or KGB.loc[idx, 'kgb_dayofweek'] == 6):
             KGB.drop(idx, inplace=True)
