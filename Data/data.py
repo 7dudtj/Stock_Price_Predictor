@@ -7,6 +7,7 @@
 # kosdaq_Close, kosdaq_Volume, kosdaq_Change, nasdaq_Close
 # usd_Close, usd_Change, jpy_Close, jpy_Change
 # acf_Close, acf_Change, ugb_Close, vix_Close
+# btc_Close, btc_Volume, btc_Change, kgb_Close, kgb_Change
 #
 # 사용 예시 : getData('20200106', '20220429')
 
@@ -15,7 +16,7 @@ import FinanceDataReader as fdr
 import pandas as pd
 
 # getData() 에서 사용되는 함수들---------------------------------------------
-# 1. columns rename function
+# 1. function for columns renaming
 def cols_rename(data_set, target_name):
     for i in data_set.columns:
         if i == 'Date':
@@ -24,7 +25,7 @@ def cols_rename(data_set, target_name):
             data_set.rename(columns={i:target_name+'_'+i}, inplace=True)
     return data_set
 
-# 2. column rename function
+# 2. function for column renaming
 def col_rename(data_set, name_from, name_to):
     for i in data_set.columns:
         if i != name_from:
@@ -32,6 +33,11 @@ def col_rename(data_set, name_from, name_to):
         else:
             data_set.rename(columns={i:name_to}, inplace=True)
     return data_set
+
+# 3. function for adjusting friday to sunday data as new friday data
+def weekendToFriday(target, idx, col): # idx: Friday
+    target.loc[idx, col] = (target.loc[idx, col]//7)*1 + (target.loc[idx+1, col]//7)*2 + (target.loc[idx+2, col]//7)*4
+    return target.loc[idx, col]
 # --------------------------------------------------------------------------
 
 
@@ -90,6 +96,45 @@ def getData(start_date, end_date):
     col_rename(VIX, 'DATE', 'Date')
     col_rename(VIX, 'VIXCLS', 'vix_Close')
     data = pd.merge(data, VIX, how='outer')
+
+    # 암호화폐: 비트코인(BitCoin) 추가
+    BTC = fdr.DataReader('BTC/KRW',start_date,end_date).reset_index()
+    BTC['dayofweek'] = BTC['Date'].dt.dayofweek
+    BTC.drop(['Open', 'High', 'Low'], axis=1, inplace=True)
+    cols_rename(BTC, 'btc')
+    if (BTC.loc[len(BTC)-1, 'btc_dayofweek'] == 5):
+        BTC.drop(len(BTC)-1, inplace=True)
+    for idx in BTC.index:
+        if (BTC.loc[idx, 'btc_dayofweek'] == 6):
+            BTC.loc[idx-2, 'btc_Close'] = weekendToFriday(BTC, idx-2, 'btc_Close')
+            BTC.loc[idx-2, 'btc_Volume'] = weekendToFriday(BTC, idx-2, 'btc_Volume')
+            BTC.loc[idx-2, 'btc_Change'] = weekendToFriday(BTC, idx-2, 'btc_Change')
+    for idx in BTC.index:
+        if (BTC.loc[idx, 'btc_dayofweek'] == 5 or BTC.loc[idx, 'btc_dayofweek'] == 6):
+            BTC.drop(idx, inplace=True)
+    BTC.drop(['btc_dayofweek'], axis=1, inplace=True)
+    BTC.reset_index(inplace=True)
+    BTC.drop(['index'], axis=1, inplace=True)
+    data = pd.merge(data, BTC, how='outer')
+
+    # 국채: 한국 국채 추가
+    KGB = fdr.DataReader('KR10YT=RR', start_date, end_date).reset_index()
+    KGB['dayofweek'] = KGB['Date'].dt.dayofweek
+    KGB.drop(['Open', 'High', 'Low'], axis=1, inplace=True)
+    cols_rename(KGB, 'kgb')
+    if (KGB.loc[len(KGB)-1, 'kgb_dayofweek'] == 5):
+        KGB.drop(len(KGB)-1, inplace=True)
+    for idx in KGB.index:
+        if (KGB.loc[idx, 'kgb_dayofweek'] == 6):
+            KGB.loc[idx-2, 'kgb_Close'] = weekendToFriday(KGB, idx-2, 'kgb_Close')
+            KGB.loc[idx-2, 'kgb_Change'] = weekendToFriday(KGB, idx-2, 'kgb_Change')
+    for idx in KGB.index:
+        if (KGB.loc[idx, 'kgb_dayofweek'] == 5 or KGB.loc[idx, 'kgb_dayofweek'] == 6):
+            KGB.drop(idx, inplace=True)
+    KGB.drop(['kgb_dayofweek'], axis=1, inplace=True)
+    KGB.reset_index(inplace=True)
+    KGB.drop(['index'], axis=1, inplace=True)
+    data = pd.merge(data, KGB, how='outer')
 
     # NaN 값은 전일 값으로 대체. 
     data = data.fillna(method='ffill')
