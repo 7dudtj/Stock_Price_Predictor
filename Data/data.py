@@ -108,6 +108,11 @@ def getData(start_date, end_date):
     cols_rename(BTC, 'btc')
     if (BTC.loc[len(BTC)-1, 'btc_dayofweek'] == 5):
         BTC.drop(len(BTC)-1, inplace=True)
+    if (BTC.loc[0, 'btc_dayofweek'] == 6):
+        BTC.drop(0, inplace=True)
+    elif (BTC.loc[0, 'btc_dayofweek'] == 5):
+        BTC.drop(0, inplace=True)
+        BTC.drop(1, inplace=True)
     for idx in BTC.index:
         if (BTC.loc[idx, 'btc_dayofweek'] == 6):
             BTC.loc[idx-2, 'btc_Close'] = weekendToFriday(BTC, idx-2, 'btc_Close', 'intType')
@@ -128,6 +133,11 @@ def getData(start_date, end_date):
     cols_rename(KGB, 'kgb')
     if (KGB.loc[len(KGB)-1, 'kgb_dayofweek'] == 5):
         KGB.drop(len(KGB)-1, inplace=True)
+    if (KGB.loc[0, 'kgb_dayofweek'] == 6):
+        KGB.drop(0, inplace=True)
+    elif (KGB.loc[0, 'kgb_dayofweek'] == 5):
+        KGB.drop(0, inplace=True)
+        KGB.drop(1, inplace=True)
     for idx in KGB.index:
         if (KGB.loc[idx, 'kgb_dayofweek'] == 6):
             KGB.loc[idx-2, 'kgb_Close'] = weekendToFriday(KGB, idx-2, 'kgb_Close', 'floatType')
@@ -147,5 +157,4 @@ def getData(start_date, end_date):
 
     # 주어진 기간에 해당하는 정보들을 담은 데이터프레임 반환
     return data
-
-
+    
