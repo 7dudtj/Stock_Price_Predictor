@@ -1,0 +1,2 @@
+해당 파일들 중에서 xgboost2 파일이 지금 현재 어느정도 구현이 완료된 파일입니다.
+learning rate랑 data subsample을 적용한 모델입니다.
