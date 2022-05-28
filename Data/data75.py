@@ -1,13 +1,11 @@
 # 주어진 시작 날짜와 끝 날짜에 해당하는 데이터가 담긴
 # 데이터프레임을 반환하는 모듈입니다.
 # 
+# data 모듈에 반영되는 데이터 중, 
+# KOSPI를 기준으로 상관계수가 0.75가 넘는 지표의 데이터들만 모았습니다.
 # 반환되는 데이터프레임에 들어있는 정보는 다음과 같습니다.
 #
-# Date, weekday, weeknum, kospi_Close, kospi_Volume, kospi_Change
-# kosdaq_Close, kosdaq_Volume, kosdaq_Change, nasdaq_Close
-# usd_Close, usd_Change, jpy_Close, jpy_Change
-# acf_Close, acf_Change, ugb_Close, vix_Close
-# btc_Close, btc_Volume, btc_Change, kgb_Close, kgb_Change
+# 
 #
 # 사용 예시 : getData('20200106', '20220429')
 
@@ -44,7 +42,6 @@ def weekendToFriday(target, idx, col, returnType): # idx: Friday
     return target.loc[idx, col]
 # --------------------------------------------------------------------------
 
-
 # 주어진 기간에 해당하는 데이터프레임 반환 함수
 def getData(start_date, end_date):
 
@@ -71,11 +68,7 @@ def getData(start_date, end_date):
     col_rename(NAS, 'NASDAQCOM', 'nasdaq_Close')
     data = pd.merge(data, NAS, how='outer')
 
-    # 환율: 원달러(USD) 추가
-    USD = fdr.DataReader('USD/KRW', start_date, end_date).reset_index()
-    USD = USD.drop(['Open', 'High', 'Low'], axis=1)
-    cols_rename(USD, 'usd')
-    data = pd.merge(data, USD, how='outer')
+    # 환율: 원달러(USD) >> 상관계수 0.75 미만이므로 제외
 
     # 환율: 원엔(JPY) 추가
     JPY = fdr.DataReader('JPY/KRW', start_date, end_date).reset_index()
@@ -89,17 +82,9 @@ def getData(start_date, end_date):
     cols_rename(ACF, 'acf')
     data = pd.merge(data, ACF, how='outer')
 
-    # 국채: 미 국채 10년 추가
-    UGB = fdr.DataReader('DGS10', start_date, end_date, data_source='fred').reset_index()
-    col_rename(UGB, 'DATE', 'Date')
-    col_rename(UGB, 'DGS10', 'ugb_Close')
-    data = pd.merge(data, UGB, how='outer')
+    # 국채: 미 국채 10년 추가 >> 상관계수 0.75 미만이므로 제외
 
-    # 변동성 지수 추가
-    VIX = fdr.DataReader('VIXCLS', start_date, end_date, data_source='fred').reset_index()
-    col_rename(VIX, 'DATE', 'Date')
-    col_rename(VIX, 'VIXCLS', 'vix_Close')
-    data = pd.merge(data, VIX, how='outer')
+    # 변동성 지수 추가 >> 상관계수 0.75 미만이므로 제외
 
     # 암호화폐: 비트코인(BitCoin) 추가
     BTC = fdr.DataReader('BTC/KRW',start_date,end_date).reset_index()
@@ -126,30 +111,7 @@ def getData(start_date, end_date):
     BTC.drop(['index'], axis=1, inplace=True)
     data = pd.merge(data, BTC, how='outer')
 
-    # 국채: 한국 국채 추가
-    KGB = fdr.DataReader('KR10YT=RR', start_date, end_date).reset_index()
-    KGB['dayofweek'] = KGB['Date'].dt.dayofweek
-    KGB.drop(['Open', 'High', 'Low'], axis=1, inplace=True)
-    cols_rename(KGB, 'kgb')
-    if (KGB.loc[len(KGB)-1, 'kgb_dayofweek'] == 5):
-        KGB.drop(len(KGB)-1, inplace=True)
-    if (KGB.loc[0, 'kgb_dayofweek'] == 6):
-        KGB.drop(0, inplace=True)
-    elif (KGB.loc[0, 'kgb_dayofweek'] == 5):
-        KGB.drop(0, inplace=True)
-        KGB.drop(1, inplace=True)
-    for idx in KGB.index:
-        if (KGB.loc[idx, 'kgb_dayofweek'] == 6):
-            KGB.loc[idx-2, 'kgb_Close'] = weekendToFriday(KGB, idx-2, 'kgb_Close', 'floatType')
-            KGB.loc[idx-2, 'kgb_Change'] = weekendToFriday(KGB, idx-2, 'kgb_Change', 'floatType')
-            KGB.loc[idx-2, 'kgb_Change'] = np.ceil(weekendToFriday(KGB, idx-2, 'kgb_Change', 'floatType')*1000)/1000
-    for idx in KGB.index:
-        if (KGB.loc[idx, 'kgb_dayofweek'] == 5 or KGB.loc[idx, 'kgb_dayofweek'] == 6):
-            KGB.drop(idx, inplace=True)
-    KGB.drop(['kgb_dayofweek'], axis=1, inplace=True)
-    KGB.reset_index(inplace=True)
-    KGB.drop(['index'], axis=1, inplace=True)
-    data = pd.merge(data, KGB, how='outer')
+    # 국채: 한국 국채 추가 >> 상관계수 0.75 미만이므로 제외
 
     # NaN 값은 전일 값으로 대체. 
     data = data.fillna(method='ffill')
