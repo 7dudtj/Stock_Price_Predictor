@@ -5,7 +5,10 @@
 # KOSPI를 기준으로 상관계수가 0.75가 넘는 지표의 데이터들만 모았습니다.
 # 반환되는 데이터프레임에 들어있는 정보는 다음과 같습니다.
 #
-# 
+# Date, weekday, weeknum, kospi_Close, kospi_Volume, kospi_Change
+# kosdaq_Close, kosdaq_Volume, kosdaq_Change, nasdaq_Close
+# jpy_Close, jpy_Change, acf_Close, acf_Change
+# btc_Close, btc_Volume, btc_Change
 #
 # 사용 예시 : getData('20200106', '20220429')
 
