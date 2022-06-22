@@ -5,3 +5,5 @@ sklearn
 tqdm
 jupyter
 ipykernel
+torch
+csv
